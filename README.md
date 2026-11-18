@@ -1,48 +1,39 @@
-# 星绘 AI 修图师（Discord 机器人）
+# 星绘 AI 修图师（Discord）
 
-这是一个供 Railway 部署的 Node.js Discord Gateway 机器人基础版本。
+这是 Railway 长驻运行的 Discord Gateway 机器人。**启动入口在项目根目录 `index.js`**，`package.json` 的启动命令是 `node index.js`，不会再查找不存在的 `src/index.js`。
 
-## 已实现
-- `/retouch`：上传照片并输入修图要求，调用 `gpt-image-2.6-sunburst` 编辑原图。
-- `/remember`：保存个人默认偏好，或按 `profile` 名称保存人物档案。
-- `/profiles`：查看人物档案名称。
-- `/forget`：删除一个人物档案，或清空个人默认偏好。
-- 默认提示词强调尽可能保留原人物身份、五官特征和自然皮肤质感。
-- 可选自动修图：消息包含 `#修图` 且附带图片时触发，默认关闭以防误触和意外 API 费用。
+## Railway Variables
 
-## Railway 环境变量
-在服务的 Variables 中逐项添加：
-- `DISCORD_BOT_TOKEN`：Discord Bot Token
-- `DISCORD_CLIENT_ID`：Discord Application ID
-- `DISCORD_GUILD_ID`：你的服务器 ID（建议先用服务器级命令，注册更快）
-- `OPENAI_API_KEY`：OpenAI API Key
+在 Railway 服务的 Variables 中逐项添加：
+
+- `DISCORD_TOKEN`：Discord Bot Token（不要公开）
+- `DISCORD_CLIENT_ID`：Discord 应用 ID
+- `DISCORD_GUILD_ID`：目标 Discord 服务器 ID（建议先填，命令会立即注册到该服务器）
+- `OPENAI_API_KEY`：OpenAI API Key（不要公开）
 - `OPENAI_IMAGE_MODEL`：`gpt-image-2.6-sunburst`
+- `AUTO_EDIT`：`false`（默认关闭自动模式，避免频道里有人发图就意外产生费用）
 - `DATA_DIR`：`/data`
-- `MAX_IMAGE_MB`：`18`
-- `AUTO_RETOUCH`：先设为 `false`
+- `MAX_IMAGE_MB`：`15`
+- `USER_COOLDOWN_SECONDS`：`30`
 
-不要把密钥写进代码或上传到 GitHub，也不要发给任何人。
+## Railway 持久化档案
 
-## 持久化记忆
-在 Railway 为服务添加 Volume，并将挂载路径设为 `/data`。人物档案和偏好保存在 `/data/preferences.json`。不配置 Volume 时，重新部署可能丢失这些偏好。
+如果希望人物档案在重新部署后仍保留，请在 Railway 给服务添加 Volume，并将 Mount Path 设为 `/data`。否则容器本地文件可能在重新部署后丢失。
 
-## Discord 设置
-Bot 需要 `applications.commands` scope，以及在服务器中使用命令的权限。
-先使用 `/retouch` 斜杠命令，不需要开启 Message Content Intent。
-若要启用自动模式：
-1. 在 Discord Developer Portal → Bot 中开启 **Message Content Intent**。
-2. 在 Railway Variables 将 `AUTO_RETOUCH` 改为 `true`。
-3. 自动模式仅处理包含 `#修图` 的图片消息，以免普通图片上传意外产生费用。
+## Discord Bot 设置
 
-## 运行
-Node.js 20 或更高版本：
-```bash
-npm install
-npm start
-```
+在 Discord Developer Portal 的 Bot 页面启用 **MESSAGE CONTENT INTENT**，仅在你要开启 `AUTO_EDIT=true` 自动处理频道图片时需要。Slash 命令 `/edit` 不依赖自动监听频道消息。
 
-## 重要说明
-- GPT Image 修图会尽量遵守保留人物长相的要求，但任何生成式模型都不能保证每次完全一致。
-- 每次修图都会产生 OpenAI API 用量费用；请先用少量测试。
-- 这个版本尚未加入计费系统、队列、用户额度、管理员后台或照片长期存储。
-- 用户照片只在请求处理期间读取，不写入本地持久化档案。
+## Commands
+
+- `/edit photo instruction profile`：上传照片修图；instruction 可写本次要求，profile 可填人物档案名。
+- `/remember profile preference`：保存一个人物档案偏好。
+- `/profile name`：查看档案；不填 name 列出档案名。
+- `/forget profile`：删除人物档案。
+
+## 注意
+
+- 图片编辑通过 `POST https://api.openai.com/v1/images/edits` 调用 GPT Image。
+- API 按实际模型用量收费；请勿把 API Key 或 Bot Token 发到聊天、GitHub 或截图中。
+- 模型会尽量保持人物身份特征，但无法保证每个细节完全不变。重要照片请检查成片。
+- 自动模式默认关闭。确认机器人稳定、费用可接受后，再考虑把 `AUTO_EDIT` 改成 `true`。
