@@ -1,0 +1,19 @@
+{
+  "name": "xinghui-ai-discord-bot",
+  "version": "2.0.0",
+  "private": true,
+  "description": "星绘AI：专用 Discord GPT Image 图片编辑机器人",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "check": "node --check index.js"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.19.3",
+    "dotenv": "^16.4.7",
+    "sharp": "^0.34.3"
+  }
+}
